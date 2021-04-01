@@ -27,17 +27,23 @@
 
 
 .right {
-  display:flex;
+  display: flex;
   flex-direction: column;
-
+  
   &__result {
-    border:1px solid gray;
-    white-space: pre-wrap;
-    width: 350px;
-    height: 350px;
-    overflow: auto;
+    display:flex;
+    flex-direction: column;
+    border: 1px solid gray;
+    &__tree {
+      border: transparent;
+      white-space: pre-wrap;
+      width: 350px;
+      height: 350px;
+      overflow: auto;
+    }
   }
 }
+
 
 
 .arrow {

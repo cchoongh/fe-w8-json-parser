@@ -1,15 +1,25 @@
 import { Type } from './const.js';
 import Queue from './container/Queue.js';
-// import Stack from './container/Stack.js';
+import Stack from './container/Stack.js';
 import SyntaxTree from './syntax-tree/SyntaxTree.js';
 import SyntaxTreeNode from './syntax-tree/SyntaxTreeNode.js';
-
 // FIXME: reference issue? => deep copy 'tokens'..
 
+let arrayDepth = 0;
+const arrayDepthStack = new Stack();
+arrayDepthStack.push(0);
+let numCount = 0;
+let strCount = 0;
+
 export function parse(tokens) {
+  arrayDepth = 0;
+  numCount = 0;
+  strCount = 0;
   const syntaxTree = new SyntaxTree();
   childParse({ parentNode: syntaxTree.getRoot(), tokens });
-  return syntaxTree;
+  arrayDepth = Math.max(arrayDepthStack.stack);
+  console.log(arrayDepth);
+  return {syntaxTree:syntaxTree, arrayDepth:arrayDepth, numCount, strCount};
 }
 
 function childParse({ parentNode, tokens }) {
@@ -35,13 +45,17 @@ function childParse({ parentNode, tokens }) {
       const propValueToken = tokenQueue.shift();
 
       if (propValueToken.type === Type.STRING || propValueToken.type === Type.BOOLEAN || propValueToken.type === Type.NUMBER) {
+        if(propValueToken.type === Type.STRING) strCount++;
+        if(propValueToken.type === Type.NUMBER) numCount++;
         const propValueNode = new SyntaxTreeNode(propValueToken);
         valueNode.setPropValue(propValueNode);
       } else if (propValueToken.type === Type.LBRAKET) {    // if value token is array
+        arrayDepth++;
+        arrayDepthStack.push(arrayDepth);
         const propValueNode = new SyntaxTreeNode({ type: Type.ARRAY, value: 'arrayObject' });
         childParse({    // recursion this function with array type
           parentNode: propValueNode,
-          tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue })
+          tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue }),
         });
         valueNode.setPropValue(propValueNode);
       } else if (propValueToken.type === Type.LBRACE) {   // if value token is object
@@ -61,10 +75,12 @@ function childParse({ parentNode, tokens }) {
     }
 
     if (currToken.type === Type.LBRAKET) {    // if token is [
+      arrayDepth++;
+      arrayDepthStack.push(arrayDepth);
       const newNode = new SyntaxTreeNode({ type: Type.ARRAY, value: 'arrayObject' });
       childParse({
         parentNode: newNode,
-        tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue })
+        tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue }),
       });
       parentNode.appendChild(newNode);
     } else if (currToken.type === Type.LBRACE) {
@@ -77,6 +93,8 @@ function childParse({ parentNode, tokens }) {
     } else if (currToken.type === Type.COLON) {
       throw new Error(`Invalid syntax, invalid ':'`);
     } else if (currToken.type === Type.STRING || currToken.type === Type.BOOLEAN || currToken.type === Type.NUMBER || currToken.type === Type.NULL) {
+      if(currToken.type === Type.STRING) strCount++;
+      if(currToken.type === Type.NUMBER) numCount++;
       const newNode = new SyntaxTreeNode({ type: currToken.type, value : currToken.value });
       parentNode.appendChild(newNode);
     } else {
@@ -90,8 +108,11 @@ export function getPartialTokens({ rightType, tokenQueue }) {
   let leftType;
   let leftTypeCnt = 0;
 
-  if (rightType === Type.RBRAKET) 
+  if (rightType === Type.RBRAKET) {
     leftType = Type.LBRAKET;
+    arrayDepth--;
+    arrayDepthStack.push(arrayDepth);
+  }
   else if (rightType === Type.RBRACE)
     leftType = Type.LBRACE;
   else
@@ -103,8 +124,9 @@ export function getPartialTokens({ rightType, tokenQueue }) {
     if (token.type === leftType)
       leftTypeCnt++;
     else if (token.type === rightType) {
-      if (leftTypeCnt > 0)
+      if (leftTypeCnt > 0) {
         leftTypeCnt--;
+      }
       else if (leftTypeCnt === 0)
         break;
       else
