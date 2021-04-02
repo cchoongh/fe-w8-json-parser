@@ -17,8 +17,8 @@ export function parse(tokens) {
   strCount = 0;
   const syntaxTree = new SyntaxTree();
   childParse({ parentNode: syntaxTree.getRoot(), tokens });
-  arrayDepth = Math.max(arrayDepthStack.stack);
-  console.log(arrayDepth);
+  arrayDepthStack.stack = arrayDepthStack.stack.sort((a,b)=>a-b);
+  arrayDepth = arrayDepthStack.stack[arrayDepthStack.stack.length-1];
   return {syntaxTree:syntaxTree, arrayDepth:arrayDepth, numCount, strCount};
 }
 
@@ -110,8 +110,6 @@ export function getPartialTokens({ rightType, tokenQueue }) {
 
   if (rightType === Type.RBRAKET) {
     leftType = Type.LBRAKET;
-    arrayDepth--;
-    arrayDepthStack.push(arrayDepth);
   }
   else if (rightType === Type.RBRACE)
     leftType = Type.LBRACE;
@@ -121,9 +119,14 @@ export function getPartialTokens({ rightType, tokenQueue }) {
   while (!tokenQueue.empty()) {
     const token = tokenQueue.shift();
 
-    if (token.type === leftType)
+    if (token.type === leftType){
       leftTypeCnt++;
+      arrayDepth++;
+      arrayDepthStack.push(arrayDepth);
+    }
     else if (token.type === rightType) {
+      arrayDepth--;
+      arrayDepthStack.push(arrayDepth);
       if (leftTypeCnt > 0) {
         leftTypeCnt--;
       }

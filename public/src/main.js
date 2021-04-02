@@ -42,10 +42,10 @@ _.on(window, 'DOMContentLoaded', load);
 
 /*  test cases
 
-  '["1 2 3", 23, true, null, {"key":[false]}, "234ho"]'
+  '["1 2 3", 23, [true, [null,"hi"]], {"key":[false]}, "234ho"]'
   '["1 2, 3", 23, true, null, {"key":3.214}, [{"key1":false,"key2": 2.234},{"key3":23}], "234h,o"]'
   '["1a3", [null, false, ["11", [112233],{"easy" : ["hello", {"a":"a"}, "world"]}, 112], 55, "99"],{"a":"str", "b":[912, [5636,33], {"key":"innervalue", "newkeys":[1,2,3,4,5]}]}, true, false, "true", "false"]'
-  '{"a":"str","b":[912, [5656, 33],{"key" : "innervalue","newkeys": [1,2,3,4,5]}]}'
+  '{"a":"str","b":[912, [5656, [33]],{"key" : "innervalue","newkeys": [1,2,3,4,5]}]}'
 
 
 */
