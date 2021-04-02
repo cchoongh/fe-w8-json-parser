@@ -16,6 +16,54 @@ tcs.forEach((tc, idx) => {
   console.log('tokens:', JSON.stringify(tokens));
   const lexerTokens = lexer(tokens);
   console.log('lexerTokens:', lexerTokens);
-  const syntaxTree = parse(lexerTokens);
-  console.log('syntaxTree:', JSON.stringify(syntaxTree, null, '  '));
+  return parse(lexerTokens);
 });
+
+function test_integratedParser() {
+  console.log('run test_integratedParser()');
+
+  tcs.forEach((tc, idx) => {
+    console.log('test', idx);
+    console.log('input:', tc);
+    const syntaxTree = createSyntaxTree(tc);
+    console.log('syntaxTree:', JSON.stringify(syntaxTree, null, '  '));
+  });
+}
+
+function test_syntaxTreeToString() {
+  console.log('run test_syntaxTreeToString()');
+
+  tcs.forEach((tc, idx) => {
+    console.log('test', idx);
+    console.log('input:', tc);
+    const syntaxTree = createSyntaxTree(tc);
+    console.log('syntaxTree.toString():', syntaxTree.toString());
+  });
+}
+
+function test_syntaxTreeGetArrayDepth() {
+  console.log('run test_syntaxTreeGetArrayDepth()');
+
+  tcs.forEach((tc, idx) => {
+    console.log('test', idx);
+    console.log('input:', tc);
+    const syntaxTree = createSyntaxTree(tc);
+    console.log('syntaxTree.getArrayDepth():', syntaxTree.getArrayDepth());
+  })
+}
+
+function test_syntaxTreeGetNumCount() {
+  console.log('run test_syntaxTreeGetNumCount()');
+
+  tcs.forEach((tc, idx) => {
+    console.log('test', idx);
+    console.log('input:', tc);
+    const syntaxTree = createSyntaxTree(tc);
+    console.log('syntaxTree.getNumCount():', syntaxTree.getNumCount());
+  })
+}
+
+// test_integratedParser();
+// test_syntaxTreeToString();
+// test_syntaxTreeGetArrayDepth();
+test_syntaxTreeGetNumCount();

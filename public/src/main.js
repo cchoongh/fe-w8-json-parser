@@ -11,14 +11,12 @@ function getTreeData() {
   const tokens = tokenizer(data);
   const lexerTokens = lexer(tokens);
   const parseResult = parse(lexerTokens);
-  const syntaxTree = parseResult.syntaxTree;
-  const arrayDepth = parseResult.arrayDepth;
-  const numCount = parseResult.numCount;
-  const strCount = parseResult.strCount;
-  console.log(arrayDepth,numCount,strCount); 
+  const syntaxTree = parseResult;
+  const arrayDepth = syntaxTree.getArrayDepth();
+  
   const result = 'syntaxTree:' + JSON.stringify(syntaxTree, null, '  ');
   print.innerText = result;
-  return {syntaxTree, arrayDepth, numCount, strCount};
+  return {arrayDepth: arrayDepth};
 }
 
 function analysis() {
@@ -26,9 +24,10 @@ function analysis() {
   const resultDiv = _.$(".right__result__analysis");
   resultDiv.innerText = `
   배열 깊이: ${data.arrayDepth}
-  문자열 타입 갯수: ${data.strCount}
-  숫자 타입 갯수: ${data.numCount}
-  `
+  `;
+//   문자열 타입 갯수: ${data.strCount}
+//   숫자 타입 갯수: ${data.numCount}
+//   
 }
 
 

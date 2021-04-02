@@ -1,28 +1,17 @@
 import { Type } from './const.js';
 import Queue from './container/Queue.js';
-import Stack from './container/Stack.js';
 import SyntaxTree from './syntax-tree/SyntaxTree.js';
 import SyntaxTreeNode from './syntax-tree/SyntaxTreeNode.js';
+
 // FIXME: reference issue? => deep copy 'tokens'..
 
-let arrayDepth = 0;
-const arrayDepthStack = new Stack();
-arrayDepthStack.push(0);
-let numCount = 0;
-let strCount = 0;
-
 export function parse(tokens) {
-  arrayDepth = 0;
-  numCount = 0;
-  strCount = 0;
   const syntaxTree = new SyntaxTree();
-  childParse({ parentNode: syntaxTree.getRoot(), tokens });
-  arrayDepthStack.stack = arrayDepthStack.stack.sort((a,b)=>a-b);
-  arrayDepth = arrayDepthStack.stack[arrayDepthStack.stack.length-1];
-  return {syntaxTree:syntaxTree, arrayDepth:arrayDepth, numCount, strCount};
+  childParse({ parentNode: syntaxTree.getRoot(), tokens, depth: 0 });
+  return syntaxTree;
 }
 
-function childParse({ parentNode, tokens }) {
+function childParse({ parentNode, tokens, depth }) {
   const tokenQueue = new Queue({ initialData: tokens });
 
   while (!tokenQueue.empty()) { // shift tokenQueue until it's empty
@@ -40,66 +29,69 @@ function childParse({ parentNode, tokens }) {
       if (tokenQueue.shift().type !== Type.COLON) // next of "key" is shold be :
         throw new Error(`Invalid syntax, ':' is not exist!`);
 
-      const objPropNode = new SyntaxTreeNode({ type: Type.OBJECT_PROPERTY });
-      const valueNode = new SyntaxTreeNode({ propKey: new SyntaxTreeNode(propKeyToken) });
+      const objPropNode = new SyntaxTreeNode({ type: Type.OBJECT_PROPERTY, depth: depth + 1 });
+      const valueNode = new SyntaxTreeNode({ depth: objPropNode.getDepth() + 1 });
+      const propKeyNode = new SyntaxTreeNode({ type: propKeyToken.type, value: propKeyToken.value, depth: valueNode.getDepth() + 1 });
+      valueNode.setPropKey(propKeyNode);
+      
       const propValueToken = tokenQueue.shift();
+      const propValueNode = new SyntaxTreeNode({ depth: valueNode.getDepth() + 1 });
 
       if (propValueToken.type === Type.STRING || propValueToken.type === Type.BOOLEAN || propValueToken.type === Type.NUMBER) {
-        if(propValueToken.type === Type.STRING) strCount++;
-        if(propValueToken.type === Type.NUMBER) numCount++;
-        const propValueNode = new SyntaxTreeNode(propValueToken);
-        valueNode.setPropValue(propValueNode);
+        propValueNode.setType(propValueToken.type);
+        propValueNode.setValue(propValueToken.value);
       } else if (propValueToken.type === Type.LBRAKET) {    // if value token is array
-        arrayDepth++;
-        arrayDepthStack.push(arrayDepth);
-        const propValueNode = new SyntaxTreeNode({ type: Type.ARRAY, value: 'arrayObject' });
+        propValueNode.setType(Type.ARRAY);
+        propValueNode.setValue('arrayObject');
         childParse({    // recursion this function with array type
           parentNode: propValueNode,
           tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue }),
+          depth: valueNode.getDepth() + 1
         });
-        valueNode.setPropValue(propValueNode);
       } else if (propValueToken.type === Type.LBRACE) {   // if value token is object
-        const propValueNode = new SyntaxTreeNode({ type: Type.OBJECT });
+        propValueNode.setType(Type.OBJECT);
         childParse({  // recursion this function with object type
           parentNode: propValueNode,
-          tokens: getPartialTokens({ rightType: Type.RBRACE, tokenQueue })
+          tokens: getPartialTokens({ rightType: Type.RBRACE, tokenQueue }),
+          depth: valueNode.getDepth() + 1
         });
-        valueNode.setPropValue(propValueNode);
       } else {
         throw new Error(`Invalid propValue type, ${propValueToken.type}`);
       }
-
+      
+      valueNode.setPropValue(propValueNode);
       objPropNode.setValue(valueNode);
       parentNode.appendChild(objPropNode);
       continue;   // object case of parent node is end
     }
 
+    const newNode = new SyntaxTreeNode({ depth: depth + 1 });
+
     if (currToken.type === Type.LBRAKET) {    // if token is [
-      arrayDepth++;
-      arrayDepthStack.push(arrayDepth);
-      const newNode = new SyntaxTreeNode({ type: Type.ARRAY, value: 'arrayObject' });
+      newNode.setType(Type.ARRAY);
+      newNode.setValue('arrayObject');
       childParse({
         parentNode: newNode,
         tokens: getPartialTokens({ rightType: Type.RBRAKET, tokenQueue }),
+        depth: depth + 1
       });
-      parentNode.appendChild(newNode);
     } else if (currToken.type === Type.LBRACE) {
-      const newNode = new SyntaxTreeNode({ type: Type.OBJECT });
+      newNode.setType(Type.OBJECT);
       childParse({
         parentNode: newNode,
-        tokens: getPartialTokens({ rightType: Type.RBRACE, tokenQueue })
+        tokens: getPartialTokens({ rightType: Type.RBRACE, tokenQueue }),
+        depth: depth + 1
       });
-      parentNode.appendChild(newNode);
     } else if (currToken.type === Type.COLON) {
       throw new Error(`Invalid syntax, invalid ':'`);
     } else if (currToken.type === Type.STRING || currToken.type === Type.BOOLEAN || currToken.type === Type.NUMBER || currToken.type === Type.NULL) {
-      if(currToken.type === Type.STRING) strCount++;
-      if(currToken.type === Type.NUMBER) numCount++;
-      const newNode = new SyntaxTreeNode({ type: currToken.type, value : currToken.value });
-      parentNode.appendChild(newNode);
+      newNode.setType(currToken.type);
+      newNode.setValue(currToken.value);
     } else {
       throw new Error(`Invalid tokens, ${tokens}`);
     }
+
+    parentNode.appendChild(newNode);
   }
 }
 
@@ -108,9 +100,8 @@ export function getPartialTokens({ rightType, tokenQueue }) {
   let leftType;
   let leftTypeCnt = 0;
 
-  if (rightType === Type.RBRAKET) {
+  if (rightType === Type.RBRAKET) 
     leftType = Type.LBRAKET;
-  }
   else if (rightType === Type.RBRACE)
     leftType = Type.LBRACE;
   else
@@ -119,17 +110,11 @@ export function getPartialTokens({ rightType, tokenQueue }) {
   while (!tokenQueue.empty()) {
     const token = tokenQueue.shift();
 
-    if (token.type === leftType){
+    if (token.type === leftType)
       leftTypeCnt++;
-      arrayDepth++;
-      arrayDepthStack.push(arrayDepth);
-    }
     else if (token.type === rightType) {
-      arrayDepth--;
-      arrayDepthStack.push(arrayDepth);
-      if (leftTypeCnt > 0) {
+      if (leftTypeCnt > 0)
         leftTypeCnt--;
-      }
       else if (leftTypeCnt === 0)
         break;
       else

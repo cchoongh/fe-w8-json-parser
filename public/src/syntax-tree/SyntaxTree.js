@@ -5,7 +5,6 @@ import SyntaxTreeNode from './SyntaxTreeNode.js';
 export default class SyntaxTree {
   constructor() {
     this.root = new SyntaxTreeRootNode();
-    // this.arrayDepth = 0;
   }
 
   getRoot() {
@@ -13,31 +12,36 @@ export default class SyntaxTree {
   }
 
   getArrayDepth() {
-    console.log(calArrayDepth(this.root.child, this.arrayDepth));
+    return arrayDepthRecursion({ currNode: this.root.getEntryNode(), depth: 0 });
   }
 
   toString() {
-    return this.root.toString();
+    return this.root.getEntryNode()?.toString();
   }
 }
 
-function calArrayDepth(curNode, arrayDepth=0) {
-  // console.log(curNode);
-  curNode.forEach((el) => {
-    if(el.type === "array") {
-      console.log("ho");
-      calArrayDepth(el, arrayDepth++);}
-
-    else return arrayDepth;
-  })
-  // if(curNode.type === "array") calArrayDepth(curNode.child)
-}
-
-
-
-
-class SyntaxTreeRootNode extends SyntaxTreeNode{
+class SyntaxTreeRootNode extends SyntaxTreeNode {
   constructor() {
-    super({ type: 'root'});
+    super({ type: 'root' });
   }
+
+  getEntryNode() {
+    return this.child?.[0];
+  }
+}
+
+function arrayDepthRecursion({ currNode, depth }) {
+  const nextDepth = currNode.getType() === Type.ARRAY ? depth + 1 : depth;
+  let resultDepth = depth;
+
+  currNode.getChild()?.forEach(childNode => {
+    let tmpDepth = 0;
+
+    if (childNode.getType() === Type.OBJECT_PROPERTY)
+      tmpDepth = arrayDepthRecursion({ currNode: childNode.getValue().getPropValue(), depth: nextDepth }) ?? 0;
+    
+    resultDepth =  Math.max(tmpDepth, resultDepth, arrayDepthRecursion({ currNode: childNode, depth: nextDepth }) ?? 0);
+  });
+
+  return resultDepth;
 }
