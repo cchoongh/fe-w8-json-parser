@@ -1,6 +1,5 @@
 .wrapper {
   display: flex;
-  margin: 220px 0;
   justify-content: space-around;
   > section {
     border: 1px solid gray;
@@ -11,9 +10,10 @@
 
   display:flex;
   flex-direction: column;
+  width:100%;
   
   &__data {
-    height: 300px;
+    height: 800px;
     width:auto;
     word-break: break-all;
     overflow: scroll;
@@ -29,16 +29,18 @@
 .right {
   display: flex;
   flex-direction: column;
+  width:100%;
   
   &__result {
     display:flex;
     flex-direction: column;
     border: 1px solid gray;
+    height:800px;
     &__tree {
       border: transparent;
       white-space: pre-wrap;
-      width: 350px;
-      height: 350px;
+      width: auto;
+      height: 90%;
       overflow: auto;
     }
   }
@@ -49,4 +51,5 @@
 .arrow {
   font-size: 100px;
   align-self: center;
+  margin: 0 20px;
 }
